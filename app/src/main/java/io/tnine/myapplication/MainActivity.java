@@ -18,8 +18,5 @@ public class MainActivity extends AppCompatActivity {
         decorView.setSystemUiVisibility(uiOptions);
         setContentView(R.layout.activity_main);
 
-
-
-
     }
 }
