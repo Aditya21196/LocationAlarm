@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="io.tnine.myapplication.MainActivity">
+
+    <fragment
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:name="io.tnine.myapplication.Destination_fragcode"
+        android:id="@+id/destination_fragment"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        tools:layout="@layout/destination_frag" />
+
+    <fragment
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:name="io.tnine.myapplication.map1frag"
+        android:id="@+id/map_fragment"
+        android:layout_alignParentStart="true"
+        tools:layout="@layout/activity_maps"
+        android:layout_below="@id/destination_fragment"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true" />
+
+    <fragment
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:name="io.tnine.myapplication.alarm_settingsfragcode"
+        android:id="@+id/alarmsetfragment"
+        tools:layout="@layout/alarm_settingsfrag"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+
+</RelativeLayout>
+
