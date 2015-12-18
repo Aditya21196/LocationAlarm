@@ -7,6 +7,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 import io.tnine.myapplication.R;
 
 public class map1frag extends Fragment {
@@ -16,6 +21,10 @@ public class map1frag extends Fragment {
         View view = inflater.inflate(R.layout.activity_maps, container, false);
 
 
+
+
+
         return view;
     }
+
 }
