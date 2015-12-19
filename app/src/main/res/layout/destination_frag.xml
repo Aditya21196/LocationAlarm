@@ -35,21 +35,6 @@
         android:layout_alignParentEnd="true"
         android:layout_toEndOf="@+id/textView2"
         android:layout_alignTop="@+id/textView2" />
-    <AutoCompleteTextView
-
-        android:id="@+id/autoCompleteTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:text="Enter Destination"
-        android:textSize="30sp"
-        android:textColor="#CE93D8"
-        android:layout_toEndOf="@+id/ToTextView"
-        android:layout_above="@+id/textView2"
-        android:background="#BA68C8"
-        android:layout_alignParentTop="true">
-        <requestFocus />
-    </AutoCompleteTextView>
 
 
 </RelativeLayout>
