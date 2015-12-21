@@ -5,20 +5,30 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.places.Places;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 
-public class fragment_console extends AppCompatActivity {
+public class fragment_console extends AppCompatActivity implements
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
 
 
     //declaration of app constituents
     private Button alarmbutton;
     private boolean result = true;
+
     //if result is true, destination fragment is seen
     //if result is false, alarm settings fragment is seen
+
+    private GoogleApiClient mClient;
 
     public boolean dstatus = false;
 
@@ -27,12 +37,17 @@ public class fragment_console extends AppCompatActivity {
     GoogleMap googleMap;
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fragment_console);
 
+        mClient = new GoogleApiClient.Builder(this)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
 
 
         //declarations
@@ -96,5 +111,30 @@ if(googleMap==null) {
         switchalarmbutton();
     }
     //places
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+    @Override
+    public void onConnected(Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+    }
+
+    private void gotoLocation(double lat, double lng, boolean mark, String title){
+        LatLng ll = new LatLng(lat,lng);
+        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(ll, 15);
+        googleMap.moveCamera(update);
+        if (mark){
+            MarkerOptions marker=(new MarkerOptions().position(ll).title(title));
+            googleMap.addMarker(marker);
+        }
+    }
+
 
 }

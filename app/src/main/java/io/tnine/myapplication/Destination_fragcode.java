@@ -9,9 +9,11 @@ import android.view.ViewGroup;
 
 public class Destination_fragcode extends Fragment {
 
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.destination_frag, container, false);
                 return view;
     }
