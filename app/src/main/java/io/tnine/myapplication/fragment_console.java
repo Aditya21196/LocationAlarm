@@ -1,9 +1,21 @@
 package io.tnine.myapplication;
 
+import android.content.Context;
+import android.location.Address;
+import android.location.Geocoder;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -12,8 +24,13 @@ import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.io.IOException;
+import java.util.List;
 
 
 public class fragment_console extends AppCompatActivity implements
@@ -34,7 +51,12 @@ public class fragment_console extends AppCompatActivity implements
 
     View frag1;
     View frag2;
-    GoogleMap googleMap;
+    GoogleMap map;
+
+    double destlat;
+    double destlng;
+
+    Marker marker;
 
 
     @Override
@@ -55,20 +77,14 @@ public class fragment_console extends AppCompatActivity implements
         frag1 = findViewById(R.id.destination_fragment);
         frag2 = findViewById(R.id.alarmsetfragment);
 //code to obtain google map named googleMap
-        try{
-if(googleMap==null) {
-    googleMap = ((MapFragment) getFragmentManager()
-            .findFragmentById(R.id.map)).getMap();
-             }
-        }
-            catch(Exception e)
-            {
-                e.printStackTrace();
+        try {
+            if (map == null) {
+                map = ((MapFragment) getFragmentManager()
+                        .findFragmentById(R.id.map)).getMap();
             }
-
-
-
-
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         //code to turn some instance variables invisible when program starts
         alarmbutton.setVisibility(View.GONE);
@@ -84,38 +100,71 @@ if(googleMap==null) {
                 }
         );
 
+
+
     }
 
 
-//switch methods
-    public void switchfrags(){
+    //switch methods
+    public void switchfrags() {
 
-        if (result==true){
+        if (result == true) {
             frag1.setVisibility(View.GONE);
             frag2.setVisibility(View.VISIBLE);
-        }else{
+        } else {
             frag1.setVisibility(View.VISIBLE);
             frag2.setVisibility(View.GONE);
         }
         result = !result;
     }
-    public void switchalarmbutton(){
-        if(alarmbutton.getVisibility()==View.GONE){
+
+    public void switchalarmbutton() {
+        if (alarmbutton.getVisibility() == View.GONE) {
             alarmbutton.setVisibility(View.VISIBLE);
-        }else{
+        } else {
             alarmbutton.setVisibility(View.GONE);
         }
     }
-    public void dstatusSwitch(){
-        dstatus=!dstatus;
-        switchalarmbutton();
+
+
+    public void geoLocate(View v) throws IOException {
+        hideSoftKeyboard(v);
+
+        EditText Destination = (EditText) findViewById(R.id.etDestination);
+        String location = Destination.getText().toString();
+
+        Geocoder gc = new Geocoder(this);
+        List<Address> list = gc.getFromLocationName(location, 1);
+        Address add = list.get(0);
+        String Locality = add.getLocality();
+        Toast.makeText(this, Locality, Toast.LENGTH_LONG).show();
+
+        destlat = add.getLatitude();
+        destlng = add.getLongitude();
+
+        gotoLocation(destlat, destlng, 15);
+        String locality = add.getLocality();
+        if (marker != null) {
+            marker.remove();
+        }
+
+        MarkerOptions options = new MarkerOptions()
+                .title(locality)
+                .position(new LatLng(destlat, destlng));
+
+        marker = map.addMarker(options);
     }
-    //places
+
+    private void hideSoftKeyboard(View v) {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+    }
 
     @Override
     public void onConnectionSuspended(int i) {
 
     }
+
     @Override
     public void onConnected(Bundle bundle) {
 
@@ -126,15 +175,66 @@ if(googleMap==null) {
 
     }
 
-    private void gotoLocation(double lat, double lng, boolean mark, String title){
-        LatLng ll = new LatLng(lat,lng);
-        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(ll, 15);
-        googleMap.moveCamera(update);
-        if (mark){
-            MarkerOptions marker=(new MarkerOptions().position(ll).title(title));
-            googleMap.addMarker(marker);
-        }
+    private void gotoLocation(double lat, double lng, int Zoom) {
+        LatLng ll = new LatLng(lat, lng);
+        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(ll, Zoom);
+        map.animateCamera(update);
+
     }
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
