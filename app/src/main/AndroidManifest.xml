@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
     package="io.tnine.myapplication"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-sdk tools:overrideLibrary="android.support.v13, net.sf.sprockets"/>
 
     <!--
          The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
@@ -61,7 +59,10 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCbBdPrRBMj_B0AwlXMOsGtphAE7-iSboI"/>
 
-        <activity android:name=".fragment_console"></activity>
+        <activity
+            android:name=".fragment_console">
+
+        </activity>
     </application>
 
 </manifest>

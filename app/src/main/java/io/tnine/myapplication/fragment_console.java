@@ -47,7 +47,6 @@ public class fragment_console extends AppCompatActivity implements
 
     private GoogleApiClient mClient;
 
-    public boolean dstatus = false;
 
     View frag1;
     View frag2;
