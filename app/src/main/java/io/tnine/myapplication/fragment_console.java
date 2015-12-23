@@ -71,6 +71,7 @@ public class fragment_console extends AppCompatActivity implements
 
 
 
+
         mClient = new GoogleApiClient
                 .Builder(this)
                 .addApi(Places.GEO_DATA_API)
