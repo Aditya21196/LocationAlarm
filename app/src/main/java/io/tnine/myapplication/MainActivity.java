@@ -15,22 +15,6 @@ public class MainActivity extends Activity {
     private static int TIME_OUT = 5000; //Time to launch the another activity
 
 
-    public boolean servicesOK(){
-        int isAvailable = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
-
-        if (isAvailable == ConnectionResult.SUCCESS){
-            return true;
-        }
-        else {
-            if (GooglePlayServicesUtil.isUserRecoverableError(isAvailable)) {
-                Dialog dialog = GooglePlayServicesUtil.getErrorDialog(isAvailable, this, GPS_ERRORDIALOG_REQUEST);
-                dialog.show();
-            } else {
-                Toast.makeText(this, "Can't connect to Google Play services", Toast.LENGTH_SHORT).show();
-            }
-        }
-        return false;
-    }
 
 
 
@@ -52,9 +36,6 @@ public class MainActivity extends Activity {
 
         }, TIME_OUT);
 
-        if(servicesOK()){
-
-        }
 
     }
 }
