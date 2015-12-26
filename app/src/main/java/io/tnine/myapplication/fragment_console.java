@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -67,6 +68,7 @@ public class fragment_console extends AppCompatActivity implements
     double destlng;
 
     double latilast,longitlast;
+    double updLat, updLng;
 
     Marker marker;
     Marker locmarker;
@@ -74,7 +76,6 @@ public class fragment_console extends AppCompatActivity implements
     Location mLastLocation;
     LocationRequest mLocationRequest;
     Location mCurrentLocation;
-    String mLastUpdateTime;
     String REQUESTING_LOCATION_UPDATES_KEY ;
     boolean mRequestingLocationUpdates = true;
     String LOCATION_KEY;
@@ -227,8 +228,7 @@ public class fragment_console extends AppCompatActivity implements
                    locmarker.remove();
                }
                locmarker = map.addMarker(locoptions);
-               gotoLocation(latilast,longitlast,14);
-
+               gotoLocation(latilast, longitlast, 14);
            }
        }catch(SecurityException e){
            //do nothing
@@ -238,7 +238,6 @@ public class fragment_console extends AppCompatActivity implements
             startLocationUpdates();
         }
     }
-
 
 
 
@@ -287,7 +286,9 @@ public class fragment_console extends AppCompatActivity implements
 
     @Override
     public void onLocationChanged(Location location) {
-        locll = new LatLng(location.getLatitude(),location.getLongitude());
+        updLat = location.getLatitude();
+        updLng = location.getLongitude();
+        locll = new LatLng(updLat,updLng);
 
             MarkerOptions locoptions = new MarkerOptions()
                     .title("You are here")
@@ -297,6 +298,7 @@ public class fragment_console extends AppCompatActivity implements
         }
             locmarker = map.addMarker(locoptions);
             startLocationUpdates();
+
 
     }
     //stopping location updates
