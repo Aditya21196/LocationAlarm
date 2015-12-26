@@ -23,6 +23,18 @@
         android:background="#7B1FA2"
 
         android:textColor="#FFFFFF" />
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FOLLOW ME"
+        android:id="@+id/checkBox"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_alignTop="@+id/setalarm_button" />
+
 </RelativeLayout>
 
 
