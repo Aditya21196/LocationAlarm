@@ -1,12 +1,16 @@
 package io.tnine.myapplication;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Vibrator;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -35,6 +39,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -62,7 +68,7 @@ public class fragment_console extends AppCompatActivity implements
 
     View frag1;
     View frag2;
-    GoogleMap map;
+    public GoogleMap map;
 
     double destlat;
     double destlng;
@@ -70,8 +76,8 @@ public class fragment_console extends AppCompatActivity implements
     double latilast,longitlast;
     double updLat, updLng;
 
-    Marker marker;
-    Marker locmarker;
+    public Marker marker;
+    public Marker locmarker;
 
     Location mLastLocation;
     LocationRequest mLocationRequest;
@@ -80,6 +86,17 @@ public class fragment_console extends AppCompatActivity implements
     boolean mRequestingLocationUpdates = true;
     String LOCATION_KEY;
     LatLng locll;
+    LatLng destloc;
+
+    boolean alarm = false;
+    Ringtone r;
+    Vibrator vibrator;
+
+
+
+    public Circle circle;
+    double rad;
+
 
 
 
@@ -129,7 +146,10 @@ public class fragment_console extends AppCompatActivity implements
         alarmbutton = (Button) findViewById(R.id.setalarm_button);
         frag1 = findViewById(R.id.destination_fragment);
         frag2 = findViewById(R.id.alarmsetfragment);
-//code to obtain google map named map
+        final EditText radius = (EditText) findViewById(R.id.radiusValue);
+
+
+        //code to obtain google map named map
         try {
             if (map == null) {
                 map = ((MapFragment) getFragmentManager()
@@ -139,9 +159,12 @@ public class fragment_console extends AppCompatActivity implements
             e.printStackTrace();
         }
 
+        Button OKButton = (Button) findViewById(R.id.OKButton);
+
         //code to turn some instance variables invisible when program starts
         alarmbutton.setVisibility(View.GONE);
         frag2.setVisibility(View.GONE);
+        OKButton.setVisibility(View.GONE);
 
         //Initial On click listeners
         alarmbutton.setOnClickListener(
@@ -149,24 +172,98 @@ public class fragment_console extends AppCompatActivity implements
                     public void onClick(View v) {
                         switchfrags();
                         switchalarmbutton();
+                        setCircle(800,destloc);
                     }
                 }
         );
 
+        radius.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (radius.getText().toString().length() == 0) {
+                    rad = 800;
+                } else {
+                    String no = radius.getText().toString();
+                    rad = Integer.parseInt(no);
+                }
+
+                setCircle(rad, destloc);
+            }
+        });
+
+
+        OKButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchfrags();
+                Toast.makeText(fragment_console.this, "The alarm has been set", Toast.LENGTH_LONG).show();
+                alarm = true;
+            }
+        });
+
+        map.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(LatLng latLng) {
+
+                destlng = latLng.longitude;
+                destlat = latLng.latitude;
+
+                if (frag1.getVisibility() == View.GONE){
+                    switchfrags();
+                }
+
+                destloc = new LatLng(destlat,destlng);
+
+                gotoLocation(destlat, destlng, 14);
+                if (marker != null) {
+                    marker.remove();
+                }
+                if (circle != null){
+                    circle.remove();
+                    circle = null;
+                }
+
+                MarkerOptions options = new MarkerOptions()
+                        .title("your destination")
+                        .position(destloc);
+
+                marker = map.addMarker(options);
+                alarm = false;
+                if(alarmbutton.getVisibility() == View.GONE){
+                    alarmbutton.setVisibility(View.VISIBLE);
+                }
+            }
+        });
 
 
     }
 
 
+
+
     //switch methods
     public void switchfrags() {
+
+        Button OKButton = (Button) findViewById(R.id.OKButton);
 
         if (result == true) {
             frag1.setVisibility(View.GONE);
             frag2.setVisibility(View.VISIBLE);
+            OKButton.setVisibility(View.VISIBLE);
         } else {
             frag1.setVisibility(View.VISIBLE);
             frag2.setVisibility(View.GONE);
+            OKButton.setVisibility(View.VISIBLE);
         }
         result = !result;
     }
@@ -191,17 +288,29 @@ public class fragment_console extends AppCompatActivity implements
         destlat = add.getLatitude();
         destlng = add.getLongitude();
 
+        destloc = new LatLng(destlat,destlng);
+
+        if (frag1.getVisibility() == View.GONE){
+            switchfrags();
+        }
+
         gotoLocation(destlat, destlng, 14);
         String locality = add.getLocality();
         if (marker != null) {
             marker.remove();
         }
+        if (circle != null){
+            circle.remove();
+            circle = null;
+        }
 
         MarkerOptions options = new MarkerOptions()
                 .title(locality)
-                .position(new LatLng(destlat, destlng));
+                .position(destloc);
 
         marker = map.addMarker(options);
+        switchalarmbutton();
+        alarm = false;
     }
 
 
@@ -274,6 +383,8 @@ public class fragment_console extends AppCompatActivity implements
 
     protected void startLocationUpdates() {
 
+        createLocationRequest();
+
         try{
             LocationServices.FusedLocationApi.requestLocationUpdates(
                     mGoogleApiClient, mLocationRequest, this);
@@ -295,9 +406,30 @@ public class fragment_console extends AppCompatActivity implements
                     .position(locll);
         if(locmarker != null){
             locmarker.remove();
+            locmarker = null;
         }
             locmarker = map.addMarker(locoptions);
-            startLocationUpdates();
+
+
+
+        if (alarm){
+            double distance;
+            Location locationA = new Location("");
+            locationA.setLatitude(destlat);
+            locationA.setLongitude(destlng);
+            Location locationB = new Location("");
+            locationB.setLatitude(updLat);
+            locationB.setLongitude(updLng);
+            distance = locationA.distanceTo(locationB);
+            if(distance<rad){
+                alertUser();
+                Toast.makeText(this,"Destination is now within your range",Toast.LENGTH_LONG).show();
+                alarm = false;
+            }
+        }
+
+        startLocationUpdates();
+
 
 
     }
@@ -349,6 +481,29 @@ public class fragment_console extends AppCompatActivity implements
 
         }
     }
+
+    public void setCircle(double radius, LatLng t) {
+        CircleOptions cOptions = new CircleOptions()
+                .center(t)
+                .radius(radius)
+                .strokeWidth(5)
+                .strokeColor(Color.RED)
+                .fillColor(0x33FF0000);
+
+        if (circle != null){
+            circle.remove();
+            circle = null;
+        }
+
+        circle = map.addCircle(cOptions);
+    }
+
+    public void alertUser(){
+
+
+        alarm = false;
+    }
+
 }
 
 
