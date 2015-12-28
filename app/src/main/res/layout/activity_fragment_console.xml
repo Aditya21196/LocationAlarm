@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="io.tnine.myapplication.fragment_console">
+    tools:context="io.tnine.myapplication.fragment_console"
+    android:id="@+id/console">
 
     <fragment
         android:layout_width="match_parent"
@@ -34,6 +35,19 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true"
         android:layout_alignBottom="@+id/destination_fragment" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/alarm_button"
+        android:id="@+id/setalarm_button"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="20dp"
+        android:layout_marginRight="20dp"
+        android:background="#7B1FA2"
+        android:textColor="#FFFFFF" />
+
 
 
 

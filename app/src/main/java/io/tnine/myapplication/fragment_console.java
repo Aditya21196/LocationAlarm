@@ -427,7 +427,7 @@ public class fragment_console extends AppCompatActivity implements
                 alarm = false;
             }
         }
-
+ //done
         startLocationUpdates();
 
 
