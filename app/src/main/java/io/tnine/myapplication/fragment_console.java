@@ -2,6 +2,7 @@ package io.tnine.myapplication;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
@@ -16,7 +17,10 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Display;
+import android.view.Surface;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -85,16 +89,11 @@ public class fragment_console extends AppCompatActivity implements
 
     Location mLastLocation;
     LocationRequest mLocationRequest;
-    Location mCurrentLocation;
-    String REQUESTING_LOCATION_UPDATES_KEY ;
     boolean mRequestingLocationUpdates = true;
-    String LOCATION_KEY;
     LatLng locll;
     LatLng destloc;
 
     boolean alarm = false;
-    Ringtone r;
-    Vibrator vibrator;
 
 
 
@@ -357,28 +356,30 @@ public class fragment_console extends AppCompatActivity implements
 
     @Override
     public void onConnected(Bundle connectionHint) {
-       try{
-           mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                   mGoogleApiClient);
-           if (mLastLocation != null) {
+       if (map != null){
+           try{
+               mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                       mGoogleApiClient);
+               if (mLastLocation != null) {
 
-               latilast = mLastLocation.getLatitude();
-               longitlast = mLastLocation.getLongitude();
-               locll = new LatLng(latilast,longitlast);
+                   latilast = mLastLocation.getLatitude();
+                   longitlast = mLastLocation.getLongitude();
+                   locll = new LatLng(latilast,longitlast);
 
-               MarkerOptions locoptions = new MarkerOptions()
-                       .title("You are here")
-                       .position(locll)
-                       .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_device_gps_fixed))
-                       .anchor(0.5f, 0.5f);
-               if (locmarker != null){
-                   locmarker.remove();
+                   MarkerOptions locoptions = new MarkerOptions()
+                           .title("You are here")
+                           .position(locll)
+                           .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_device_gps_fixed))
+                           .anchor(0.5f, 0.5f);
+                   if (locmarker != null){
+                       locmarker.remove();
+                   }
+                   locmarker = map.addMarker(locoptions);
+                   gotoLocation(latilast, longitlast, 14);
                }
-               locmarker = map.addMarker(locoptions);
-               gotoLocation(latilast, longitlast, 14);
+           }catch(SecurityException e){
+               //do nothing
            }
-       }catch(SecurityException e){
-           //do nothing
        }
         if(mRequestingLocationUpdates){
             createLocationRequest();
@@ -513,6 +514,7 @@ public class fragment_console extends AppCompatActivity implements
 
 
 
+
     public void setCircle(double radius, LatLng t) {
         CircleOptions cOptions = new CircleOptions()
                 .center(t)
@@ -520,6 +522,7 @@ public class fragment_console extends AppCompatActivity implements
                 .strokeWidth(5)
                 .strokeColor(Color.RED)
                 .fillColor(0x33FF0000);
+
 
         if (circle != null){
             circle.remove();
@@ -532,8 +535,12 @@ public class fragment_console extends AppCompatActivity implements
     public void alertUser(){
 
 
-
     }
+
+
+
+
+
 
 }
 
