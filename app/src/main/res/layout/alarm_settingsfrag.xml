@@ -9,7 +9,9 @@
         android:text="Radius:"
         android:background="#7B1FA2"
         android:textColor="#FFFFFF"
-        android:textSize="40sp"
+        android:textSize="20sp"
+        android:paddingTop="15dp"
+        android:textAlignment="center"
         android:id="@+id/textView5" />
 
     <EditText
@@ -39,6 +41,7 @@
         android:layout_alignBottom="@+id/destination_fragment"
         android:layout_alignParentEnd="true"
         />
+
 
    
 

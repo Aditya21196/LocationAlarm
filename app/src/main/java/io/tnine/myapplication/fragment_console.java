@@ -49,6 +49,8 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 
 public class fragment_console extends AppCompatActivity implements
@@ -78,6 +80,8 @@ public class fragment_console extends AppCompatActivity implements
 
     public Marker marker;
     public Marker locmarker;
+    public Marker locmarker2;
+    EditText current_distance;
 
     Location mLastLocation;
     LocationRequest mLocationRequest;
@@ -97,6 +101,34 @@ public class fragment_console extends AppCompatActivity implements
     public Circle circle;
     double rad;
 
+    //Alarm Thread
+    Thread alarmThread;
+
+
+
+    Runnable s = new Runnable() {
+        @Override
+        public void run() {
+
+            double distance;
+            Location locationA = new Location("");
+            locationA.setLatitude(destlat);
+            locationA.setLongitude(destlng);
+            Location locationB = new Location("");
+            locationB.setLatitude(updLat);
+            locationB.setLongitude(updLng);
+            distance = locationA.distanceTo(locationB);
+            if(distance<rad){
+
+                alarm = false;
+                alertUser();
+                Toast.makeText(fragment_console.this,"Destination is now within your range",Toast.LENGTH_LONG).show();
+
+            }
+
+        }
+    };
+
 
 
 
@@ -106,7 +138,6 @@ public class fragment_console extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_fragment_console);
 
-        updateValuesFromBundle(savedInstanceState);
 
 
 
@@ -147,6 +178,7 @@ public class fragment_console extends AppCompatActivity implements
         frag1 = findViewById(R.id.destination_fragment);
         frag2 = findViewById(R.id.alarmsetfragment);
         final EditText radius = (EditText) findViewById(R.id.radiusValue);
+        current_distance = (EditText) findViewById(R.id.currentDistance);
 
 
         //code to obtain google map named map
@@ -165,6 +197,7 @@ public class fragment_console extends AppCompatActivity implements
         alarmbutton.setVisibility(View.GONE);
         frag2.setVisibility(View.GONE);
         OKButton.setVisibility(View.GONE);
+        current_distance.setVisibility(View.GONE);
 
         //Initial On click listeners
         alarmbutton.setOnClickListener(
@@ -224,7 +257,6 @@ public class fragment_console extends AppCompatActivity implements
 
                 destloc = new LatLng(destlat,destlng);
 
-                gotoLocation(destlat, destlng, 14);
                 if (marker != null) {
                     marker.remove();
                 }
@@ -255,15 +287,19 @@ public class fragment_console extends AppCompatActivity implements
     public void switchfrags() {
 
         Button OKButton = (Button) findViewById(R.id.OKButton);
+        current_distance = (EditText) findViewById(R.id.currentDistance);
 
         if (result == true) {
             frag1.setVisibility(View.GONE);
             frag2.setVisibility(View.VISIBLE);
             OKButton.setVisibility(View.VISIBLE);
+            current_distance.setVisibility(View.VISIBLE);
+
         } else {
             frag1.setVisibility(View.VISIBLE);
             frag2.setVisibility(View.GONE);
             OKButton.setVisibility(View.VISIBLE);
+            current_distance.setVisibility(View.GONE);
         }
         result = !result;
     }
@@ -332,7 +368,9 @@ public class fragment_console extends AppCompatActivity implements
 
                MarkerOptions locoptions = new MarkerOptions()
                        .title("You are here")
-                       .position(locll);
+                       .position(locll)
+                       .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_device_gps_fixed))
+                       .anchor(0.5f, 0.5f);
                if (locmarker != null){
                    locmarker.remove();
                }
@@ -403,16 +441,33 @@ public class fragment_console extends AppCompatActivity implements
 
             MarkerOptions locoptions = new MarkerOptions()
                     .title("You are here")
-                    .position(locll);
+                    .position(locll)
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_device_gps_fixed))
+                    .anchor(0.5f, 0.5f);
         if(locmarker != null){
+            locmarker2 = locmarker;
+            locmarker2 = map.addMarker(locoptions);
             locmarker.remove();
             locmarker = null;
         }
-            locmarker = map.addMarker(locoptions);
+        locmarker = map.addMarker(locoptions);
+        if(locmarker2 != null){
+            locmarker2.remove();
+            locmarker2 = null;
+        }
+
+
 
 
 
         if (alarm){
+
+            alarmThread = new Thread(s);
+            alarmThread.start();
+
+        }
+
+        if (frag2.getVisibility() == View.VISIBLE){
             double distance;
             Location locationA = new Location("");
             locationA.setLatitude(destlat);
@@ -421,13 +476,12 @@ public class fragment_console extends AppCompatActivity implements
             locationB.setLatitude(updLat);
             locationB.setLongitude(updLng);
             distance = locationA.distanceTo(locationB);
-            if(distance<rad){
-                alertUser();
-                Toast.makeText(this,"Destination is now within your range",Toast.LENGTH_LONG).show();
-                alarm = false;
-            }
+
+
+            EditText current_distance = (EditText)findViewById(R.id.currentDistance);
+            current_distance.setText("Current distance: " + Math.round(distance) + " m");
         }
- //done
+
         startLocationUpdates();
 
 
@@ -454,33 +508,10 @@ public class fragment_console extends AppCompatActivity implements
         }
     }
 
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY,
-                mRequestingLocationUpdates);
-        savedInstanceState.putParcelable(LOCATION_KEY, mCurrentLocation);;
-        super.onSaveInstanceState(savedInstanceState);
-    }
 
-    private void updateValuesFromBundle(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            // Update the value of mRequestingLocationUpdates from the Bundle, and
-            // make sure that the Start Updates and Stop Updates buttons are
-            // correctly enabled or disabled.
-            if (savedInstanceState.keySet().contains(REQUESTING_LOCATION_UPDATES_KEY)) {
-                mRequestingLocationUpdates = savedInstanceState.getBoolean(
-                        REQUESTING_LOCATION_UPDATES_KEY);
-            }
 
-            // Update the value of mCurrentLocation from the Bundle and update the
-            // UI to show the correct latitude and longitude.
-            if (savedInstanceState.keySet().contains(LOCATION_KEY)) {
-                // Since LOCATION_KEY was found in the Bundle, we can be sure that
-                // mCurrentLocation is not null.
-                mCurrentLocation = savedInstanceState.getParcelable(LOCATION_KEY);
-            }
 
-        }
-    }
+
 
     public void setCircle(double radius, LatLng t) {
         CircleOptions cOptions = new CircleOptions()
@@ -501,7 +532,7 @@ public class fragment_console extends AppCompatActivity implements
     public void alertUser(){
 
 
-        alarm = false;
+
     }
 
 }
