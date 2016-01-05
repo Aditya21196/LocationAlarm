@@ -98,35 +98,15 @@ public class fragment_console extends AppCompatActivity implements
 
 
     public Circle circle;
-    double rad;
+    double rad = 800;
 
-    //Alarm Thread
-    Thread alarmThread;
+    Vibrator v;
+    Ringtone r;
 
 
 
-    Runnable s = new Runnable() {
-        @Override
-        public void run() {
 
-            double distance;
-            Location locationA = new Location("");
-            locationA.setLatitude(destlat);
-            locationA.setLongitude(destlng);
-            Location locationB = new Location("");
-            locationB.setLatitude(updLat);
-            locationB.setLongitude(updLng);
-            distance = locationA.distanceTo(locationB);
-            if(distance<rad){
 
-                alarm = false;
-                alertUser();
-                Toast.makeText(fragment_console.this,"Destination is now within your range",Toast.LENGTH_LONG).show();
-
-            }
-
-        }
-    };
 
 
 
@@ -178,6 +158,8 @@ public class fragment_console extends AppCompatActivity implements
         frag2 = findViewById(R.id.alarmsetfragment);
         final EditText radius = (EditText) findViewById(R.id.radiusValue);
         current_distance = (EditText) findViewById(R.id.currentDistance);
+        Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+        r = RingtoneManager.getRingtone(getApplicationContext(), notification);
 
 
         //code to obtain google map named map
@@ -222,9 +204,7 @@ public class fragment_console extends AppCompatActivity implements
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (radius.getText().toString().length() == 0) {
-                    rad = 800;
-                } else {
+                if (radius.getText().toString().length() != 0) {
                     String no = radius.getText().toString();
                     rad = Integer.parseInt(no);
                 }
@@ -269,6 +249,12 @@ public class fragment_console extends AppCompatActivity implements
                         .position(destloc);
 
                 marker = map.addMarker(options);
+
+                if (r.isPlaying() == true ){
+                    r.stop();
+                    v.cancel();
+                }
+
                 alarm = false;
                 if(alarmbutton.getVisibility() == View.GONE){
                     alarmbutton.setVisibility(View.VISIBLE);
@@ -344,6 +330,12 @@ public class fragment_console extends AppCompatActivity implements
                 .position(destloc);
 
         marker = map.addMarker(options);
+
+        if (r.isPlaying()){
+            r.stop();
+            v.cancel();
+        }
+
         switchalarmbutton();
         alarm = false;
     }
@@ -461,10 +453,23 @@ public class fragment_console extends AppCompatActivity implements
 
 
 
-        if (alarm){
+        if (alarm == true){
 
-            alarmThread = new Thread(s);
-            alarmThread.start();
+            double distance;
+            Location locationA = new Location("");
+            locationA.setLatitude(destlat);
+            locationA.setLongitude(destlng);
+            Location locationB = new Location("");
+            locationB.setLatitude(updLat);
+            locationB.setLongitude(updLng);
+            distance = locationA.distanceTo(locationB);
+            if(distance<rad){
+
+
+                alertUser();
+                Toast.makeText(fragment_console.this,"Destination is now within your range",Toast.LENGTH_LONG).show();
+
+            }
 
         }
 
@@ -534,6 +539,16 @@ public class fragment_console extends AppCompatActivity implements
 
     public void alertUser(){
 
+
+
+        if (!r.isPlaying()){
+            r.play();
+            long[] pattern = {0, 600, 1000};
+            v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            v.vibrate(pattern, 0);
+        }
+
+        alarm = false;
 
     }
 
