@@ -336,7 +336,9 @@ public class fragment_console extends AppCompatActivity implements
             v.cancel();
         }
 
-        switchalarmbutton();
+        if (alarmbutton.getVisibility() == View.GONE){
+            switchalarmbutton();
+        }
         alarm = false;
     }
 
