@@ -7,25 +7,27 @@
         android:layout_width="wrap_content"
         android:layout_height="55dp"
         android:text="Radius:"
-        android:background="#7B1FA2"
+        android:background="#78AB46"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        android:paddingTop="15dp"
+        android:textSize="25sp"
+        android:paddingTop="12dp"
         android:textAlignment="center"
         android:id="@+id/textView5" />
 
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="55dp"
+        android:paddingTop="5dp"
+        android:paddingLeft="20dp"
         android:id="@+id/radiusValue"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_toEndOf="@+id/textView5"
-        android:background="#BA68C8"
+        android:background="#78AB46"
         android:layout_alignBottom="@+id/textView5"
         android:hint="800"
-        android:textColorHint="#E1BEE7"
-        android:textSize="40sp"
+        android:textColorHint="#C5E1A5"
+        android:textSize="30sp"
         android:inputType="number" />
 
     <Button
@@ -33,7 +35,7 @@
         android:layout_height="41dp"
         android:text="OK"
         android:id="@+id/OKButton"
-        android:background="#EF5350"
+        android:background="#3B5323"
         android:textColor="#FFFFFF"
         android:layout_marginTop="7dp"
         android:layout_marginBottom="7dp"
@@ -41,9 +43,6 @@
         android:layout_alignBottom="@+id/destination_fragment"
         android:layout_alignParentEnd="true"
         />
-
-
-   
 
 
 </RelativeLayout>

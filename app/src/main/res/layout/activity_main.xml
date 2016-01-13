@@ -7,7 +7,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:background="#006699"
+    android:background="#3B5323"
     tools:context="io.tnine.myapplication.MainActivity">
 
     <TextView

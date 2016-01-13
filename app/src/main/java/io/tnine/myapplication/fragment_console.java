@@ -1,5 +1,6 @@
 package io.tnine.myapplication;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -18,6 +19,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
@@ -83,34 +85,28 @@ public class fragment_console extends AppCompatActivity implements
     double updLat, updLng;
 
     public Marker marker;
-    public Marker locmarker;
+    public Marker locmarker = null;
     public Marker locmarker2;
     EditText current_distance;
 
     Location mLastLocation;
     LocationRequest mLocationRequest;
-    boolean mRequestingLocationUpdates = true;
+    static boolean mRequestingLocationUpdates = true;
+    static boolean alarmHostIsService = false;
     LatLng locll;
-    LatLng destloc;
+    static LatLng destloc;
 
-    boolean alarm = false;
+    static boolean alarm = false;
 
 
 
     public Circle circle;
-    double rad = 800;
+    static double rad = 800;
 
-    Vibrator v;
-    Ringtone r;
+    static Vibrator vi;
+    static Ringtone r;
 
-
-
-
-
-
-
-
-
+    Intent bgIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -184,9 +180,35 @@ public class fragment_console extends AppCompatActivity implements
         alarmbutton.setOnClickListener(
                 new Button.OnClickListener() {
                     public void onClick(View v) {
-                        switchfrags();
-                        switchalarmbutton();
-                        setCircle(800,destloc);
+
+
+
+                        if (r.isPlaying() == true ){
+                            r.stop();
+                            vi.cancel();
+                            removeCircle();
+                            alarmbutton.setVisibility(View.GONE);
+                            alarmbutton.setText("SET ALARM");
+                            marker.remove();
+                            marker = null;
+                            current_distance.setVisibility(View.GONE);
+                        }else{
+                            if (alarmbutton.getText() != "RESET ALARM"){
+                                switchfrags();
+                                switchalarmbutton();
+                                setCircle(rad,destloc);
+                            } else {
+                                removeCircle();
+                                alarm = false;
+                                alarmbutton.setText("SET ALARM");
+                                switchalarmbutton();
+                                marker.remove();
+                                marker = null;
+                                current_distance.setVisibility(View.GONE);
+                            }
+                        }
+
+
                     }
                 }
         );
@@ -218,7 +240,9 @@ public class fragment_console extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 switchfrags();
-                Toast.makeText(fragment_console.this, "The alarm has been set", Toast.LENGTH_LONG).show();
+                Toast.makeText(fragment_console.this, "The alarm has been set", Toast.LENGTH_SHORT).show();
+                alarmbutton.setText("RESET ALARM");
+                switchalarmbutton();
                 alarm = true;
             }
         });
@@ -229,6 +253,10 @@ public class fragment_console extends AppCompatActivity implements
 
                 destlng = latLng.longitude;
                 destlat = latLng.latitude;
+
+                if (current_distance.getVisibility() == View.VISIBLE){
+                    current_distance.setVisibility(View.GONE);
+                }
 
                 if (frag1.getVisibility() == View.GONE){
                     switchfrags();
@@ -246,19 +274,13 @@ public class fragment_console extends AppCompatActivity implements
 
                 MarkerOptions options = new MarkerOptions()
                         .title("your destination")
-                        .position(destloc);
+                        .position(destloc)
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.dest_marker));
+
 
                 marker = map.addMarker(options);
 
-                if (r.isPlaying() == true ){
-                    r.stop();
-                    v.cancel();
-                }
-
-                alarm = false;
-                if(alarmbutton.getVisibility() == View.GONE){
-                    alarmbutton.setVisibility(View.VISIBLE);
-                }
+                onDestinationChanged();
             }
         });
 
@@ -284,9 +306,13 @@ public class fragment_console extends AppCompatActivity implements
             frag1.setVisibility(View.VISIBLE);
             frag2.setVisibility(View.GONE);
             OKButton.setVisibility(View.VISIBLE);
-            current_distance.setVisibility(View.GONE);
+            if (alarm){
+                current_distance.setVisibility(View.VISIBLE);
+            }
+
         }
         result = !result;
+
     }
 
     public void switchalarmbutton() {
@@ -309,6 +335,10 @@ public class fragment_console extends AppCompatActivity implements
         destlat = add.getLatitude();
         destlng = add.getLongitude();
 
+        if (current_distance.getVisibility() == View.VISIBLE){
+            current_distance.setVisibility(View.GONE);
+        }
+
         destloc = new LatLng(destlat,destlng);
 
         if (frag1.getVisibility() == View.GONE){
@@ -327,19 +357,19 @@ public class fragment_console extends AppCompatActivity implements
 
         MarkerOptions options = new MarkerOptions()
                 .title(locality)
-                .position(destloc);
+                .position(destloc)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.dest_marker));
 
         marker = map.addMarker(options);
 
-        if (r.isPlaying()){
-            r.stop();
-            v.cancel();
-        }
+        onDestinationChanged();
+    }
 
-        if (alarmbutton.getVisibility() == View.GONE){
-            switchalarmbutton();
-        }
-        alarm = false;
+    public void minimizeApp() {
+        Intent startMain = new Intent(Intent.ACTION_MAIN);
+        startMain.addCategory(Intent.CATEGORY_HOME);
+        startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(startMain);
     }
 
 
@@ -351,34 +381,36 @@ public class fragment_console extends AppCompatActivity implements
     @Override
     public void onConnected(Bundle connectionHint) {
        if (map != null){
-           try{
-               mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                       mGoogleApiClient);
-               if (mLastLocation != null) {
+           try {
+               try{
+                   mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                           mGoogleApiClient);
+                   if (mLastLocation != null) {
 
-                   latilast = mLastLocation.getLatitude();
-                   longitlast = mLastLocation.getLongitude();
-                   locll = new LatLng(latilast,longitlast);
+                       latilast = mLastLocation.getLatitude();
+                       longitlast = mLastLocation.getLongitude();
+                       locll = new LatLng(latilast,longitlast);
 
-                   MarkerOptions locoptions = new MarkerOptions()
-                           .title("You are here")
-                           .position(locll)
-                           .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_device_gps_fixed))
-                           .anchor(0.5f, 0.5f);
-                   if (locmarker != null){
-                       locmarker.remove();
+                       MarkerOptions locoptions = new MarkerOptions()
+                               .title("You are here")
+                               .position(locll)
+                               .icon(BitmapDescriptorFactory.fromResource(R.drawable.mapmarker));
+                       if (locmarker != null){
+                           locmarker.remove();
+                       }
+                       locmarker = map.addMarker(locoptions);
+                       gotoLocation(latilast, longitlast, 14);
                    }
-                   locmarker = map.addMarker(locoptions);
-                   gotoLocation(latilast, longitlast, 14);
+               }catch(SecurityException e){
+                   //do nothing
                }
-           }catch(SecurityException e){
-               //do nothing
+           }catch (Exception e){
+               mGoogleApiClient.connect();
+           }
+           if(mRequestingLocationUpdates){
+               startLocationUpdates();
            }
        }
-        if(mRequestingLocationUpdates){
-            createLocationRequest();
-            startLocationUpdates();
-        }
     }
 
 
@@ -419,14 +451,23 @@ public class fragment_console extends AppCompatActivity implements
         createLocationRequest();
 
         try{
-            LocationServices.FusedLocationApi.requestLocationUpdates(
-                    mGoogleApiClient, mLocationRequest, this);
+            try{
+                LocationServices.FusedLocationApi.requestLocationUpdates(
+                        mGoogleApiClient, mLocationRequest, this);
 
-        }catch (SecurityException e){
-            //code to ask for permission
+            }catch (SecurityException e){
+                //code to ask for permission
+            }
+        }catch (Exception e){
+            if (mGoogleApiClient == null){
+                mGoogleApiClient.connect();
+            }
+
         }
-
     }
+
+
+
 
     @Override
     public void onLocationChanged(Location location) {
@@ -437,8 +478,12 @@ public class fragment_console extends AppCompatActivity implements
             MarkerOptions locoptions = new MarkerOptions()
                     .title("You are here")
                     .position(locll)
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_device_gps_fixed))
-                    .anchor(0.5f, 0.5f);
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.mapmarker));
+
+        if (locmarker == null){
+            gotoLocation(updLat, updLng, 15);
+        }
+
         if(locmarker != null){
             locmarker2 = locmarker;
             locmarker2 = map.addMarker(locoptions);
@@ -465,7 +510,8 @@ public class fragment_console extends AppCompatActivity implements
             locationB.setLatitude(updLat);
             locationB.setLongitude(updLng);
             distance = locationA.distanceTo(locationB);
-            if(distance<rad){
+            current_distance.setText("Current distance: " + Math.round(distance) + " m");
+            if(distance<rad && !alarmHostIsService){
 
 
                 alertUser();
@@ -494,12 +540,19 @@ public class fragment_console extends AppCompatActivity implements
 
 
 
+
     }
     //stopping location updates
     @Override
     protected void onPause() {
         super.onPause();
         stopLocationUpdates();
+        if(alarm){
+            bgIntent = new Intent(this, bgAlarmService.class);
+            startService(bgIntent);
+            alarmHostIsService = true;
+        }
+
     }
 
     protected void stopLocationUpdates() {
@@ -517,8 +570,12 @@ public class fragment_console extends AppCompatActivity implements
     }
 
 
-
-
+    //onBackPressed
+    @Override
+    public void onBackPressed()
+    {
+        minimizeApp();
+    }
 
 
 
@@ -527,8 +584,8 @@ public class fragment_console extends AppCompatActivity implements
                 .center(t)
                 .radius(radius)
                 .strokeWidth(5)
-                .strokeColor(Color.RED)
-                .fillColor(0x33FF0000);
+                .strokeColor(0xFF3B5323)
+                .fillColor(0x8078AB46);
 
 
         if (circle != null){
@@ -546,13 +603,52 @@ public class fragment_console extends AppCompatActivity implements
         if (!r.isPlaying()){
             r.play();
             long[] pattern = {0, 600, 1000};
-            v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-            v.vibrate(pattern, 0);
+            vi = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            vi.vibrate(pattern, 0);
         }
 
         alarm = false;
 
     }
+
+    public void removeCircle() {
+        if (circle != null){
+            circle.remove();
+            circle = null;
+            alarm = false;
+        }
+    }
+
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public void onDestinationChanged(){
+        removeCircle();
+        if (r.isPlaying()){
+            r.stop();
+            vi.cancel();
+        }
+        alarmbutton.setText("SET ALARM");
+        if (alarmbutton.getVisibility() == View.GONE){
+            switchalarmbutton();
+        }
+        alarm = false;
+        if (isMyServiceRunning(bgAlarmService.class)){
+            stopService(bgIntent);
+        }
+        alarmHostIsService = false;
+    }
+
+
 
 
 
