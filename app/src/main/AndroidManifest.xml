@@ -58,10 +58,6 @@
             android:name=".fragment_console"
             android:configChanges="orientation|screenSize|keyboardHidden" />
 
-        <service
-            android:name=".bgAlarmService"
-            android:enabled="true"
-            android:exported="true"></service>
     </application>
 
 </manifest>
