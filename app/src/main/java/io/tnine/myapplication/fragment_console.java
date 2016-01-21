@@ -23,7 +23,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.os.Handler;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
@@ -49,11 +49,11 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
-public class fragment_console extends AppCompatActivity implements
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,LocationListener {
+public class fragment_console extends AppCompatActivity  {
 
 
     //declaration of app constituents
@@ -63,8 +63,11 @@ public class fragment_console extends AppCompatActivity implements
     //if result is true, destination fragment is seen
     //if result is false, alarm settings fragment is seen
 
-    private GoogleApiClient mGoogleApiClient ;
-
+    TimerTask timerTask;
+    final Handler handler = new Handler();
+    final Handler handler2 = new Handler();
+    Timer timer;
+    int count = 0;
 
     View frag1;
     View frag2;
@@ -96,8 +99,10 @@ public class fragment_console extends AppCompatActivity implements
 
 
 
+
     public Circle circle;
     double rad = 800;
+    GPSTracker gpsT;
 
 
 
@@ -110,14 +115,6 @@ public class fragment_console extends AppCompatActivity implements
 
 
 
-
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(LocationServices.API)
-                    .build();
-        }
 
         final PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
@@ -274,7 +271,113 @@ public class fragment_console extends AppCompatActivity implements
             }
         });
 
+        startTimer();
 
+    }
+
+    public void initializeTimerTask() {
+        timerTask = new TimerTask() {
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        gpsT = new GPSTracker(fragment_console.this);
+                        if (gpsT.canGetLocation()) {
+                            updLat = gpsT.getLatitude();
+                            updLng = gpsT.getLongitude();
+                            System.out.println("yofhuwh");
+                        }
+                        if (count == 0) {
+                            latilast = updLat;
+                            longitlast = updLng;
+                            locll = new LatLng(latilast, longitlast);
+
+                            MarkerOptions locoptions = new MarkerOptions()
+                                    .title("You are here")
+                                    .position(locll)
+                                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.mapmarker));
+                            if (locmarker != null) {
+                                locmarker.remove();
+                            }
+                            locmarker = map.addMarker(locoptions);
+                            gotoLocation(latilast, longitlast, 14);
+                            count++;
+                        }
+
+
+                        locll = new LatLng(updLat,updLng);
+
+                        MarkerOptions locoptions = new MarkerOptions()
+                                .title("You are here")
+                                .position(locll)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.mapmarker));
+
+
+
+                        if(locmarker != null){
+                            locmarker2 = locmarker;
+                            locmarker2 = map.addMarker(locoptions);
+                            locmarker.remove();
+                            locmarker = null;
+                        }
+                        locmarker = map.addMarker(locoptions);
+                        if(locmarker2 != null){
+                            locmarker2.remove();
+                            locmarker2 = null;
+                        }
+
+
+
+                        if (alarm){
+                            double distance;
+                            Location locationA = new Location("");
+                            locationA.setLatitude(destlat);
+                            locationA.setLongitude(destlng);
+                            Location locationB = new Location("");
+                            locationB.setLatitude(updLat);
+                            locationB.setLongitude(updLng);
+                            distance = locationA.distanceTo(locationB);
+                            current_distance.setText("Current distance: " + Math.round(distance) + " m");
+                            if(distance<rad){
+                                alertUser();
+                                Toast.makeText(fragment_console.this,"Destination is now within your range",Toast.LENGTH_LONG).show();
+                                alarm = false;
+                            }
+                        }
+
+                        if (frag2.getVisibility() == View.VISIBLE){
+                            double distance;
+                            Location locationA = new Location("");
+                            locationA.setLatitude(destlat);
+                            locationA.setLongitude(destlng);
+                            Location locationB = new Location("");
+                            locationB.setLatitude(updLat);
+                            locationB.setLongitude(updLng);
+                            distance = locationA.distanceTo(locationB);
+
+
+                            EditText current_distance = (EditText)findViewById(R.id.currentDistance);
+                            current_distance.setText("Current distance: " + Math.round(distance) + " m");
+                        }
+                    }
+                });
+
+
+
+
+            }
+        };
+
+
+
+    }
+
+    public void startTimer() {
+        //set a new Timer
+        timer = new Timer();
+        //initialize the TimerTask's job
+        initializeTimerTask();
+        //schedule the timer, after the first 5000ms the TimerTask will run every 10000ms
+        timer.schedule(timerTask, 0, 1500); //
     }
 
 
@@ -360,47 +463,11 @@ public class fragment_console extends AppCompatActivity implements
     }
 
 
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnected(Bundle connectionHint) {
-       try{
-           mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                   mGoogleApiClient);
-           if (mLastLocation != null) {
-
-               latilast = mLastLocation.getLatitude();
-               longitlast = mLastLocation.getLongitude();
-               locll = new LatLng(latilast,longitlast);
-
-               MarkerOptions locoptions = new MarkerOptions()
-                       .title("You are here")
-                       .position(locll)
-                       .icon(BitmapDescriptorFactory.fromResource(R.drawable.mapmarker));
-               if (locmarker != null){
-                   locmarker.remove();
-               }
-               locmarker = map.addMarker(locoptions);
-               gotoLocation(latilast, longitlast, 14);
-           }
-       }catch(SecurityException e){
-           //do nothing
-       }
-        if(mRequestingLocationUpdates){
-            createLocationRequest();
-            startLocationUpdates();
-        }
-    }
 
 
 
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
 
-    }
+
 
     private void gotoLocation(double lat, double lng, int Zoom) {
         LatLng ll = new LatLng(lat, lng);
@@ -412,9 +479,6 @@ public class fragment_console extends AppCompatActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        if (!mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.connect();
-        }
 
     }
 
@@ -423,112 +487,21 @@ public class fragment_console extends AppCompatActivity implements
         super.onStop();
     }
 
-    protected void createLocationRequest() {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(10000);
-        mLocationRequest.setFastestInterval(5000);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-    }
-
-    protected void startLocationUpdates() {
-
-        createLocationRequest();
-
-        try{
-            LocationServices.FusedLocationApi.requestLocationUpdates(
-                    mGoogleApiClient, mLocationRequest, this);
-
-        }catch (SecurityException e){
-            //code to ask for permission
-        }
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        updLat = location.getLatitude();
-        updLng = location.getLongitude();
-        locll = new LatLng(updLat,updLng);
-
-        MarkerOptions locoptions = new MarkerOptions()
-                .title("You are here")
-                .position(locll)
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.mapmarker));
-
-        if (locmarker == null){
-            gotoLocation(updLat, updLng, 15);
-        }
-
-        if(locmarker != null){
-            locmarker2 = locmarker;
-            locmarker2 = map.addMarker(locoptions);
-            locmarker.remove();
-            locmarker = null;
-        }
-        locmarker = map.addMarker(locoptions);
-        if(locmarker2 != null){
-            locmarker2.remove();
-            locmarker2 = null;
-        }
 
 
 
-        if (alarm){
-            double distance;
-            Location locationA = new Location("");
-            locationA.setLatitude(destlat);
-            locationA.setLongitude(destlng);
-            Location locationB = new Location("");
-            locationB.setLatitude(updLat);
-            locationB.setLongitude(updLng);
-            distance = locationA.distanceTo(locationB);
-            current_distance.setText("Current distance: " + Math.round(distance) + " m");
-            if(distance<rad){
-                alertUser();
-                Toast.makeText(this,"Destination is now within your range",Toast.LENGTH_LONG).show();
-                alarm = false;
-            }
-        }
 
-        if (frag2.getVisibility() == View.VISIBLE){
-            double distance;
-            Location locationA = new Location("");
-            locationA.setLatitude(destlat);
-            locationA.setLongitude(destlng);
-            Location locationB = new Location("");
-            locationB.setLatitude(updLat);
-            locationB.setLongitude(updLng);
-            distance = locationA.distanceTo(locationB);
-
-
-            EditText current_distance = (EditText)findViewById(R.id.currentDistance);
-            current_distance.setText("Current distance: " + Math.round(distance) + " m");
-        }
-
-        startLocationUpdates();
-
-
-
-    }
     //stopping location updates
     @Override
     protected void onPause() {
         super.onPause();
-        stopLocationUpdates();
     }
 
-    protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(
-                mGoogleApiClient, this);
-    }
 
     //resuming
     @Override
     public void onResume() {
         super.onResume();
-        if (mGoogleApiClient.isConnected() && !mRequestingLocationUpdates) {
-            startLocationUpdates();
-        }
     }
 
 
