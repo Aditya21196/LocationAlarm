@@ -54,6 +54,8 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 public class fragment_console extends AppCompatActivity implements
@@ -70,6 +72,9 @@ public class fragment_console extends AppCompatActivity implements
     //if result is false, alarm settings fragment is seen
 
     private GoogleApiClient mGoogleApiClient ;
+
+    Timer timer;
+    TimerTask timerTask;
 
 
     View frag1;
@@ -288,45 +293,7 @@ public class fragment_console extends AppCompatActivity implements
                 onDestinationChanged();
             }
         });
-        LocationManager lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
-        boolean gps_enabled = false;
-        boolean network_enabled = false;
-
-        try {
-            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        } catch(Exception ex) {}
-
-        try {
-            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        } catch(Exception ex) {}
-
-        if(!network_enabled){
-            createNetErrorDialog();
-        }
-
-        if(!gps_enabled) {
-            // notify user
-            AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-            dialog.setMessage("Location Alarm needs location services to run for it to work. Do you want to switch on the Location services?");
-            dialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
-                    // TODO Auto-generated method stub
-                    Intent myIntent = new Intent( Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                    startActivity(myIntent);
-                    //get gps
-                }
-            });
-            dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-
-                @Override
-                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
-                    // TODO Auto-generated method stub
-
-                }
-            });
-            dialog.show();
-        }
+        checkFeatureAvailability();
     }
 
 
@@ -466,7 +433,9 @@ public class fragment_console extends AppCompatActivity implements
         super.onStart();
         paused = false;
 
+
         if (pausedOnce){
+            checkFeatureAvailability();
             startLocationUpdates();
         }
 
@@ -505,97 +474,66 @@ public class fragment_console extends AppCompatActivity implements
 
     @Override
     public void onLocationChanged(Location location) {
-        if (paused){
-            Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    handler.post(new Runnable() {
-                        public void run() {
-                            if (alarm){
-                                double distance;
-                                Location locationA = new Location("");
-                                locationA.setLatitude(destlat);
-                                locationA.setLongitude(destlng);
-                                Location locationB = new Location("");
-                                locationB.setLatitude(updLat);
-                                locationB.setLongitude(updLng);
-                                distance = locationA.distanceTo(locationB);
-                                current_distance.setText("Current distance: " + Math.round(distance) + " m");
-                                if(distance<rad){
-                                    alertUser();
-                                    alarm = false;
-                                }
-                            }
-                        }
-                    });
-                }
-            };
-            Thread bgAlarmThread = new Thread(r);
-            bgAlarmThread.start();
-        }else{
-            updLat = location.getLatitude();
-            updLng = location.getLongitude();
-            locll = new LatLng(updLat,updLng);
+        updLat = location.getLatitude();
+        updLng = location.getLongitude();
+        locll = new LatLng(updLat,updLng);
 
-            MarkerOptions locoptions = new MarkerOptions()
-                    .title("You are here")
-                    .position(locll)
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.mapmarker));
+        MarkerOptions locoptions = new MarkerOptions()
+                .title("You are here")
+                .position(locll)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.mapmarker));
 
-            if (locmarker == null){
-                gotoLocation(updLat, updLng, 15);
-            }
-
-            if(locmarker != null){
-                locmarker2 = locmarker;
-                locmarker2 = map.addMarker(locoptions);
-                locmarker.remove();
-                locmarker = null;
-            }
-            locmarker = map.addMarker(locoptions);
-            if(locmarker2 != null){
-                locmarker2.remove();
-                locmarker2 = null;
-            }
-
-
-
-            if (alarm){
-                double distance;
-                Location locationA = new Location("");
-                locationA.setLatitude(destlat);
-                locationA.setLongitude(destlng);
-                Location locationB = new Location("");
-                locationB.setLatitude(updLat);
-                locationB.setLongitude(updLng);
-                distance = locationA.distanceTo(locationB);
-                current_distance.setText("Current distance: " + Math.round(distance) + " m");
-                if(distance<rad){
-                    alertUser();
-                    Toast.makeText(this,"Destination is now within your range",Toast.LENGTH_LONG).show();
-                    alarm = false;
-                }
-            }
-
-            if (frag2.getVisibility() == View.VISIBLE){
-                double distance;
-                Location locationA = new Location("");
-                locationA.setLatitude(destlat);
-                locationA.setLongitude(destlng);
-                Location locationB = new Location("");
-                locationB.setLatitude(updLat);
-                locationB.setLongitude(updLng);
-                distance = locationA.distanceTo(locationB);
-
-
-                EditText current_distance = (EditText)findViewById(R.id.currentDistance);
-                current_distance.setText("Current distance: " + Math.round(distance) + " m");
-            }
-
-
-
-
+        if (locmarker == null){
+            gotoLocation(updLat, updLng, 15);
         }
+
+        if(locmarker != null){
+            locmarker2 = locmarker;
+            locmarker2 = map.addMarker(locoptions);
+            locmarker.remove();
+            locmarker = null;
+        }
+        locmarker = map.addMarker(locoptions);
+        if(locmarker2 != null){
+            locmarker2.remove();
+            locmarker2 = null;
+        }
+
+
+
+        if (alarm){
+            double distance;
+            Location locationA = new Location("");
+            locationA.setLatitude(destlat);
+            locationA.setLongitude(destlng);
+            Location locationB = new Location("");
+            locationB.setLatitude(updLat);
+            locationB.setLongitude(updLng);
+            distance = locationA.distanceTo(locationB);
+            current_distance.setText("Current distance: " + Math.round(distance) + " m");
+            if(distance<rad){
+                alertUser();
+                Toast.makeText(this,"Destination is now within your range",Toast.LENGTH_LONG).show();
+                alarm = false;
+            }
+        }
+
+        if (frag2.getVisibility() == View.VISIBLE){
+            double distance;
+            Location locationA = new Location("");
+            locationA.setLatitude(destlat);
+            locationA.setLongitude(destlng);
+            Location locationB = new Location("");
+            locationB.setLatitude(updLat);
+            locationB.setLongitude(updLng);
+            distance = locationA.distanceTo(locationB);
+
+
+            EditText current_distance = (EditText)findViewById(R.id.currentDistance);
+            current_distance.setText("Current distance: " + Math.round(distance) + " m");
+        }
+
+
 
     }
 
@@ -605,6 +543,7 @@ public class fragment_console extends AppCompatActivity implements
         stopLocationUpdates();
         if (alarm){
             startLocationUpdates();
+            startTimer();
         }
 
         paused = true;
@@ -707,6 +646,96 @@ public class fragment_console extends AppCompatActivity implements
         AlertDialog alert = builder.create();
         alert.show();
     }
+    public void checkFeatureAvailability(){
+        LocationManager lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
+        boolean gps_enabled = false;
+        boolean network_enabled = false;
+
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch(Exception ex) {}
+
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch(Exception ex) {}
+
+        if(!network_enabled){
+            createNetErrorDialog();
+        }
+
+        if(!gps_enabled) {
+            // notify user
+            AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+            dialog.setMessage("Location Alarm needs location services to run for it to work. Do you want to switch on the Location services?");
+            dialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // TODO Auto-generated method stub
+                    Intent myIntent = new Intent( Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivity(myIntent);
+                    //get gps
+                }
+            });
+            dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // TODO Auto-generated method stub
+
+                }
+            });
+            dialog.show();
+        }
+    }
+    public void startTimer() {
+        //set a new Timer
+        timer = new Timer();
+        //initialize the TimerTask's job
+        initializeTimerTask();
+        //schedule the timer, after the first 5000ms the TimerTask will run every 10000ms
+        timer.schedule(timerTask, 2000, 4000); //
+    }
+    public void initializeTimerTask() {
+        timerTask = new TimerTask() {
+            public void run() {
+
+                //use a handler to run a toast that shows the current timestamp
+                handler.post(new Runnable() {
+                    public void run() {
+                        Runnable r = new Runnable() {
+                            @Override
+                            public void run() {
+                                handler.post(new Runnable() {
+                                    public void run() {
+                                        if (alarm){
+                                            double distance;
+                                            Location locationA = new Location("");
+                                            locationA.setLatitude(destlat);
+                                            locationA.setLongitude(destlng);
+                                            Location locationB = new Location("");
+                                            locationB.setLatitude(updLat);
+                                            locationB.setLongitude(updLng);
+                                            distance = locationA.distanceTo(locationB);
+                                            current_distance.setText("Current distance: " + Math.round(distance) + " m");
+                                            if(distance<rad){
+                                                alertUser();
+                                                alarm = false;
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        };
+                        Thread bgAlarmThread = new Thread(r);
+                        bgAlarmThread.start();
+                    }
+                });
+            }
+        };
+
+    }
+
+
 
 }
 
