@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Vibrator;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -115,6 +116,8 @@ public class fragment_console extends AppCompatActivity implements
     public Circle circle;
     double rad = 800;
 
+    boolean osVersionIs6orHigh = false;
+
 
 
 
@@ -122,7 +125,11 @@ public class fragment_console extends AppCompatActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        checkFeatureAvailability();
         setContentView(R.layout.activity_fragment_console);
+
+
+
 
         paused = false;
 
@@ -148,6 +155,7 @@ public class fragment_console extends AppCompatActivity implements
 
                 try {
                     geoLocate(place.getAddress().toString());
+                    startLocationUpdates();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -195,7 +203,7 @@ public class fragment_console extends AppCompatActivity implements
                 new Button.OnClickListener() {
                     public void onClick(View v) {
                         vi.cancel();
-                        if (r.isPlaying() == true ){
+                        if (r.isPlaying() == true) {
                             r.stop();
 
                             removeCircle();
@@ -204,11 +212,11 @@ public class fragment_console extends AppCompatActivity implements
                             marker.remove();
                             marker = null;
                             current_distance.setVisibility(View.GONE);
-                        }else{
-                            if (alarmbutton.getText() != "RESET ALARM"){
+                        } else {
+                            if (alarmbutton.getText() != "RESET ALARM") {
                                 switchfrags();
                                 switchalarmbutton();
-                                setCircle(rad,destloc);
+                                setCircle(rad, destloc);
                             } else {
                                 removeCircle();
                                 alarm = false;
@@ -265,20 +273,20 @@ public class fragment_console extends AppCompatActivity implements
                 destlng = latLng.longitude;
                 destlat = latLng.latitude;
 
-                if (current_distance.getVisibility() == View.VISIBLE){
+                if (current_distance.getVisibility() == View.VISIBLE) {
                     current_distance.setVisibility(View.GONE);
                 }
 
-                if (frag1.getVisibility() == View.GONE){
+                if (frag1.getVisibility() == View.GONE) {
                     switchfrags();
                 }
 
-                destloc = new LatLng(destlat,destlng);
+                destloc = new LatLng(destlat, destlng);
 
                 if (marker != null) {
                     marker.remove();
                 }
-                if (circle != null){
+                if (circle != null) {
                     circle.remove();
                     circle = null;
                 }
@@ -287,13 +295,14 @@ public class fragment_console extends AppCompatActivity implements
                         .title("your destination")
                         .position(destloc)
                         .position(destloc)
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.dest_marker));;
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.dest_marker));
+                ;
 
                 marker = map.addMarker(options);
                 onDestinationChanged();
             }
         });
-        checkFeatureAvailability();
+
     }
 
 
@@ -406,7 +415,7 @@ public class fragment_console extends AppCompatActivity implements
                 gotoLocation(latilast, longitlast, 14);
             }
         }catch(SecurityException e){
-            //do nothing
+            osVersionIs6orHigh = true;
         }
         if(mRequestingLocationUpdates){
             createLocationRequest();
@@ -466,9 +475,11 @@ public class fragment_console extends AppCompatActivity implements
             LocationServices.FusedLocationApi.requestLocationUpdates(
                     mGoogleApiClient, mLocationRequest, this);
 
+
         }catch (SecurityException e){
             //code to ask for permission
         }
+
 
     }
 
@@ -601,7 +612,7 @@ public class fragment_console extends AppCompatActivity implements
     }
 
     public void removeCircle() {
-        if (circle != null){
+        if (circle != null) {
             circle.remove();
             circle = null;
             alarm = false;
@@ -639,7 +650,7 @@ public class fragment_console extends AppCompatActivity implements
                 .setNegativeButton("Cancel",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
-                                fragment_console.this.finish();
+
                             }
                         }
                 );
@@ -649,19 +660,15 @@ public class fragment_console extends AppCompatActivity implements
     public void checkFeatureAvailability(){
         LocationManager lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
         boolean gps_enabled = false;
-        boolean network_enabled = false;
+
 
         try {
             gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
         } catch(Exception ex) {}
 
-        try {
-            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        } catch(Exception ex) {}
 
-        if(!network_enabled){
-            createNetErrorDialog();
-        }
+
+
 
         if(!gps_enabled) {
             // notify user
