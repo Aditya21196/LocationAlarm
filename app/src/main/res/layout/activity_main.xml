@@ -10,7 +10,14 @@
     android:background="#3B5323"
     tools:context="io.tnine.myapplication.MainActivity">
 
-    <TextView
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/splash"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"/>
+
+   <!-- <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
@@ -18,7 +25,20 @@
         android:id="@+id/textView"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
-        android:textColor="#FFFFFF" />
+        android:textColor="#FFFFFF" />-->
+   <!-- <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Never Miss a Destination"
+        android:paddingTop="20dp"
+
+        android:layout_below="@+id/textView"
+        android:textStyle="italic"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/textView1"
+
+        android:textColor="#b30000" />-->
 
 
 </RelativeLayout>

@@ -1,5 +1,6 @@
 package io.tnine.myapplication;
 
+
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -23,6 +24,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -111,14 +113,10 @@ public class fragment_console extends AppCompatActivity implements
     boolean pausedOnce = false;
     final Handler handler = new Handler();
 
-
-
     public Circle circle;
-    double rad = 800;
+    double rad = 500;
 
     boolean osVersionIs6orHigh = false;
-
-
 
 
 
@@ -156,8 +154,9 @@ public class fragment_console extends AppCompatActivity implements
                 try {
                     geoLocate(place.getAddress().toString());
                     startLocationUpdates();
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
+                    Toast.makeText(getApplicationContext(), "Couldn't Find this location.Please search other nearby location.", Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -171,7 +170,8 @@ public class fragment_console extends AppCompatActivity implements
 
         //declarations
         alarmbutton = (Button) findViewById(R.id.setalarm_button);
-        frag1 = findViewById(R.id.destination_fragment);
+        frag1 =findViewById(R.id.destination_fragment);
+
         frag2 = findViewById(R.id.alarmsetfragment);
         final EditText radius = (EditText) findViewById(R.id.radiusValue);
         current_distance = (EditText) findViewById(R.id.currentDistance);
@@ -189,6 +189,8 @@ public class fragment_console extends AppCompatActivity implements
         } catch (Exception e) {
             e.printStackTrace();
         }
+        map.setMyLocationEnabled(true);
+        Toast.makeText(fragment_console.this, "Long Press on the map to set that place as your destination or use search box", Toast.LENGTH_LONG).show();
 
         Button OKButton = (Button) findViewById(R.id.OKButton);
 
@@ -345,7 +347,11 @@ public class fragment_console extends AppCompatActivity implements
         List<Address> list = gc.getFromLocationName(location, 1);
         Address add = list.get(0);
         String Locality = add.getLocality();
-        Toast.makeText(this, Locality, Toast.LENGTH_LONG).show();
+        String Local=add.getAddressLine(0);
+
+
+
+        Toast.makeText(this,Local, Toast.LENGTH_LONG).show();
 
         destlat = add.getLatitude();
         destlng = add.getLongitude();
@@ -371,7 +377,7 @@ public class fragment_console extends AppCompatActivity implements
         }
 
         MarkerOptions options = new MarkerOptions()
-                .title(locality)
+                .title("Your destination")
                 .position(destloc)
                 .position(destloc)
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.dest_marker));
@@ -588,7 +594,7 @@ public class fragment_console extends AppCompatActivity implements
                 .strokeColor(0xFF3B5323)
                 .fillColor(0x8078AB46);
 
-        if (circle != null){
+        if (circle != null) {
             circle.remove();
             circle = null;
         }
@@ -601,10 +607,41 @@ public class fragment_console extends AppCompatActivity implements
 
 
         if (!r.isPlaying()){
+
             r.play();
+
             long[] pattern = {0, 600, 1000};
             vi.vibrate(pattern, 0);
             vibrating = true;
+
+            this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+            AlertDialog builder = new AlertDialog.Builder(this).create();
+            builder.setMessage("Hello Dear! You are within your range");
+
+
+            /** Setting title for the alert dialog */
+            builder.setTitle("Location alarm");
+            builder.setIcon(R.drawable.dialogicon);
+            builder.setButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    /** Exit application on click OK */
+
+                    r.stop();
+                    removeCircle();
+                    vi.cancel();
+                    alarmbutton.setText("SET ALARM");
+                    marker.remove();
+                    marker = null;
+                    current_distance.setVisibility(View.GONE);
+
+                }
+            });
+            builder.show();
+
+
+            /** Creating the alert dialog window */
+
         }
 
         alarm = false;
@@ -632,6 +669,8 @@ public class fragment_console extends AppCompatActivity implements
         alarm = false;
 
     }
+
+
 
     protected void createNetErrorDialog() {
 
@@ -741,6 +780,7 @@ public class fragment_console extends AppCompatActivity implements
         };
 
     }
+    public void pp(){};
 
 
 
