@@ -21,6 +21,7 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
@@ -32,6 +33,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
@@ -55,8 +58,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -118,6 +123,13 @@ public class fragment_console extends AppCompatActivity implements
 
     boolean osVersionIs6orHigh = false;
 
+    Button fav_button;
+    public static ArrayList<String> locNamesAL = new ArrayList<>();
+    public static ArrayList<Double> locLat = new ArrayList<>();
+    public static ArrayList<Double> locLng = new ArrayList<>();
+
+    private String m_Text = "";
+    int destinationCounter = 0;
 
 
     @Override
@@ -127,18 +139,18 @@ public class fragment_console extends AppCompatActivity implements
         setContentView(R.layout.activity_fragment_console);
 
 
-
-
         paused = false;
 
 
         if (mGoogleApiClient == null) {
+            // ATTENTION: This "addApi(AppIndex.API)"was auto-generated to implement the App Indexing API.
+            // See https://g.co/AppIndexing/AndroidStudio for more information.
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
                     .addApi(LocationServices.API)
-                    .build();
-        }else{
+                    .addApi(AppIndex.API).build();
+        } else {
             startLocationUpdates();
         }
 
@@ -170,7 +182,7 @@ public class fragment_console extends AppCompatActivity implements
 
         //declarations
         alarmbutton = (Button) findViewById(R.id.setalarm_button);
-        frag1 =findViewById(R.id.destination_fragment);
+        frag1 = findViewById(R.id.destination_fragment);
 
         frag2 = findViewById(R.id.alarmsetfragment);
         final EditText radius = (EditText) findViewById(R.id.radiusValue);
@@ -178,6 +190,7 @@ public class fragment_console extends AppCompatActivity implements
         Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
         r = RingtoneManager.getRingtone(getApplicationContext(), notification);
         vi = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        fav_button = (Button) findViewById(R.id.favButton);
 
 
         //code to obtain google map named map
@@ -199,6 +212,7 @@ public class fragment_console extends AppCompatActivity implements
         frag2.setVisibility(View.GONE);
         OKButton.setVisibility(View.GONE);
         current_distance.setVisibility(View.GONE);
+        fav_button.setVisibility(View.GONE);
 
         //Initial On click listeners
         alarmbutton.setOnClickListener(
@@ -304,6 +318,14 @@ public class fragment_console extends AppCompatActivity implements
                 onDestinationChanged();
             }
         });
+
+        fav_button.setOnClickListener(
+                new Button.OnClickListener() {
+                    public void onClick(View v) {
+                        addToFavorites();
+                    }
+                }
+        );
 
     }
 
@@ -449,7 +471,7 @@ public class fragment_console extends AppCompatActivity implements
         paused = false;
 
 
-        if (pausedOnce){
+        if (pausedOnce) {
             checkFeatureAvailability();
             startLocationUpdates();
         }
@@ -458,11 +480,40 @@ public class fragment_console extends AppCompatActivity implements
         if (!mGoogleApiClient.isConnected()) {
             mGoogleApiClient.connect();
         }
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "fragment_console Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://io.tnine.myapplication/http/host/path")
+        );
+        AppIndex.AppIndexApi.start(mGoogleApiClient, viewAction);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        Action viewAction = Action.newAction(
+                Action.TYPE_VIEW, // TODO: choose an action type.
+                "fragment_console Page", // TODO: Define a title for the content shown.
+                // TODO: If you have web page content that matches this app activity's content,
+                // make sure this auto-generated web page URL is correct.
+                // Otherwise, set the URL to null.
+                Uri.parse("http://host/path"),
+                // TODO: Make sure this auto-generated app URL is correct.
+                Uri.parse("android-app://io.tnine.myapplication/http/host/path")
+        );
+        AppIndex.AppIndexApi.end(mGoogleApiClient, viewAction);
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        mGoogleApiClient.disconnect();
     }
 
     protected void createLocationRequest() {
@@ -667,6 +718,8 @@ public class fragment_console extends AppCompatActivity implements
             switchalarmbutton();
         }
         alarm = false;
+        destinationCounter = 1;
+
 
     }
 
@@ -780,8 +833,59 @@ public class fragment_console extends AppCompatActivity implements
         };
 
     }
-    public void pp(){};
+    public void addToFavorites(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Add to favorites");
 
+//Set a message
+        builder.setMessage("Enter title to add this destination to favorites");
+// Set up the input
+        final EditText input = new EditText(this);
+// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        builder.setView(input);
+
+// Set up the buttons
+         AlertDialog.Builder done = builder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                m_Text = input.getText().toString();
+//code to add m_Text and destlat, destlng to cache, if no text in m_Text then geocoded address instead of m_Text
+                if (m_Text == "" && destinationCounter == 1) {
+                    Geocoder geocoder;
+                    List<Address> addresses;
+                    geocoder = new Geocoder(fragment_console.this, Locale.getDefault());
+
+                    try {
+                        addresses = geocoder.getFromLocation(destlat, destlng, 1);// Here 1 represent max location result to returned, by documents it recommended 1 to 5
+                        String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+                        m_Text = address;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    store(m_Text,destlat,destlng);
+
+                }
+
+
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+    }
+    void store(String s, double fLat, double fLng){
+        locNamesAL.add(s);
+        locLat.add(fLat);
+        locLng.add(fLng);
+        //code to store locNames and other data in cache
+    }
 
 
 }
