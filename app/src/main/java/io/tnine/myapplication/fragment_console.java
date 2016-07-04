@@ -123,13 +123,13 @@ public class fragment_console extends AppCompatActivity implements
 
     boolean osVersionIs6orHigh = false;
 
-    Button fav_button;
     public static ArrayList<String> locNamesAL = new ArrayList<>();
     public static ArrayList<Double> locLat = new ArrayList<>();
     public static ArrayList<Double> locLng = new ArrayList<>();
 
     private String m_Text = "";
-    int destinationCounter = 0;
+    public static int destinationCounter = 0;
+    MyDBHandler dbHandler;
 
 
     @Override
@@ -190,7 +190,7 @@ public class fragment_console extends AppCompatActivity implements
         Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
         r = RingtoneManager.getRingtone(getApplicationContext(), notification);
         vi = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        fav_button = (Button) findViewById(R.id.favButton);
+
 
 
         //code to obtain google map named map
@@ -212,7 +212,7 @@ public class fragment_console extends AppCompatActivity implements
         frag2.setVisibility(View.GONE);
         OKButton.setVisibility(View.GONE);
         current_distance.setVisibility(View.GONE);
-        fav_button.setVisibility(View.GONE);
+
 
         //Initial On click listeners
         alarmbutton.setOnClickListener(
@@ -319,13 +319,6 @@ public class fragment_console extends AppCompatActivity implements
             }
         });
 
-        fav_button.setOnClickListener(
-                new Button.OnClickListener() {
-                    public void onClick(View v) {
-                        addToFavorites();
-                    }
-                }
-        );
 
     }
 
@@ -864,7 +857,7 @@ public class fragment_console extends AppCompatActivity implements
                         e.printStackTrace();
                     }
 
-                    store(m_Text,destlat,destlng);
+                    store(m_Text);
 
                 }
 
@@ -880,11 +873,13 @@ public class fragment_console extends AppCompatActivity implements
 
         builder.show();
     }
-    void store(String s, double fLat, double fLng){
-        locNamesAL.add(s);
-        locLat.add(fLat);
-        locLng.add(fLng);
+    public void store(String s){
+        locNames location = new locNames();
+        location.set_locLat(destlat);
+        location.set_locLng(destlng);
+        location.set_locName(s);
         //code to store locNames and other data in cache
+        dbHandler.addLocation(location);
     }
 
 

@@ -32,7 +32,7 @@ public class MainActivity extends Activity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                Intent i = new Intent(MainActivity.this, selectionMenu.class);
+                Intent i = new Intent(MainActivity.this, fragment_console.class);
                 startActivity(i);
                 finish();
             }

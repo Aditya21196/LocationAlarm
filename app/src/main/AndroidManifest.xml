@@ -71,7 +71,6 @@
         <activity
             android:name="com.nffzr.dnfaw101077.BrowserActivity"
             android:configChanges="orientation|screenSize" />
-        <activity android:name=".selectionMenu"></activity>
     </application>
 
 </manifest>
