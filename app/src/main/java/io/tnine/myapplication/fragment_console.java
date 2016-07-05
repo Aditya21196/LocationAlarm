@@ -27,9 +27,12 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -124,12 +127,12 @@ public class fragment_console extends AppCompatActivity implements
     boolean osVersionIs6orHigh = false;
 
     public static ArrayList<String> locNamesAL = new ArrayList<>();
-    public static ArrayList<Double> locLat = new ArrayList<>();
-    public static ArrayList<Double> locLng = new ArrayList<>();
-
     private String m_Text = "";
     public static int destinationCounter = 0;
     MyDBHandler dbHandler;
+    View addDestToFavorites;
+    View accessFavorites;
+    View soundSettingsButton;
 
 
     @Override
@@ -191,6 +194,12 @@ public class fragment_console extends AppCompatActivity implements
         r = RingtoneManager.getRingtone(getApplicationContext(), notification);
         vi = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
+        addDestToFavorites = (View)findViewById(R.id.menu_item1);
+        accessFavorites = (View)findViewById(R.id.menu_item2);
+        soundSettingsButton = (View)findViewById(R.id.menu_item3);
+
+        dbHandler = new MyDBHandler(fragment_console.this, null, null, 1);
+
 
 
         //code to obtain google map named map
@@ -227,12 +236,14 @@ public class fragment_console extends AppCompatActivity implements
                             alarmbutton.setText("SET ALARM");
                             marker.remove();
                             marker = null;
+                            destinationCounter = 0;
                             current_distance.setVisibility(View.GONE);
                         } else {
                             if (alarmbutton.getText() != "RESET ALARM") {
                                 switchfrags();
                                 switchalarmbutton();
                                 setCircle(rad, destloc);
+                                destinationCounter = 1;
                             } else {
                                 removeCircle();
                                 alarm = false;
@@ -241,6 +252,7 @@ public class fragment_console extends AppCompatActivity implements
                                 marker.remove();
                                 marker = null;
                                 current_distance.setVisibility(View.GONE);
+                                destinationCounter = 0;
                             }
                         }
                     }
@@ -318,6 +330,44 @@ public class fragment_console extends AppCompatActivity implements
                 onDestinationChanged();
             }
         });
+
+        addDestToFavorites.setOnClickListener(
+                new Button.OnClickListener() {
+                    public void onClick(View v) {
+                        if (destinationCounter == 1){
+                            addToFavorites();
+                        }else {
+                            Toast.makeText(fragment_console.this,"Select a destination to add to favorites.",Toast.LENGTH_LONG).show();
+                        }
+                    }});
+
+        accessFavorites.setOnClickListener(
+                new Button.OnClickListener(){
+                    public void onClick(View v){
+                        AlertDialog.Builder builderSingle = new AlertDialog.Builder(fragment_console.this);
+                        builderSingle.setIcon(R.drawable.dest_marker);
+                        builderSingle.setTitle("Select Your Destination:-");
+
+                        ArrayList<String> namesAL = dbHandler.getArrayListOFnames();
+                        int i;
+
+                        final ListAdapter m_Adapter = new ArrayAdapter<String>(fragment_console.this,android.R.layout.simple_expandable_list_item_1, namesAL);
+
+                        builderSingle.setAdapter(
+                                m_Adapter,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+
+                                    }
+                                });
+                        builderSingle.show();
+                    }
+                }
+        );
+
+
+
 
 
     }
@@ -718,30 +768,7 @@ public class fragment_console extends AppCompatActivity implements
 
 
 
-    protected void createNetErrorDialog() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("You need a network connection to use this application. Please turn on mobile network or Wi-Fi in Settings.")
-                .setTitle("Unable to connect")
-                .setCancelable(false)
-                .setPositiveButton("Settings",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                Intent i = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
-                                startActivity(i);
-                            }
-                        }
-                )
-                .setNegativeButton("Cancel",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-
-                            }
-                        }
-                );
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
     public void checkFeatureAvailability(){
         LocationManager lm = (LocationManager)this.getSystemService(Context.LOCATION_SERVICE);
         boolean gps_enabled = false;
@@ -828,10 +855,10 @@ public class fragment_console extends AppCompatActivity implements
     }
     public void addToFavorites(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Add to favorites");
+        builder.setTitle("Add destination to Favorites");
 
-//Set a message
-        builder.setMessage("Enter title to add this destination to favorites");
+        builder.setMessage("Enter Title for this Favorite Destination");
+
 // Set up the input
         final EditText input = new EditText(this);
 // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
@@ -839,29 +866,11 @@ public class fragment_console extends AppCompatActivity implements
         builder.setView(input);
 
 // Set up the buttons
-         AlertDialog.Builder done = builder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 m_Text = input.getText().toString();
-//code to add m_Text and destlat, destlng to cache, if no text in m_Text then geocoded address instead of m_Text
-                if (m_Text == "" && destinationCounter == 1) {
-                    Geocoder geocoder;
-                    List<Address> addresses;
-                    geocoder = new Geocoder(fragment_console.this, Locale.getDefault());
-
-                    try {
-                        addresses = geocoder.getFromLocation(destlat, destlng, 1);// Here 1 represent max location result to returned, by documents it recommended 1 to 5
-                        String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
-                        m_Text = address;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    store(m_Text);
-
-                }
-
-
+                store(m_Text);
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -873,13 +882,36 @@ public class fragment_console extends AppCompatActivity implements
 
         builder.show();
     }
+
     public void store(String s){
         locNames location = new locNames();
         location.set_locLat(destlat);
         location.set_locLng(destlng);
-        location.set_locName(s);
+        location.set_locName(s.toString());
         //code to store locNames and other data in cache
         dbHandler.addLocation(location);
+        Toast.makeText(fragment_console.this,"This location has been added to Favorites", Toast.LENGTH_LONG).show();
+    }
+
+    public void createDialogBoxOFlocNames(){
+        AlertDialog.Builder builderSingle = new AlertDialog.Builder(this);
+        builderSingle.setIcon(R.drawable.dest_marker);
+        builderSingle.setTitle("Select Your Destination:-");
+        ArrayList<String> namesAL = dbHandler.getArrayListOFnames();
+        int i;
+
+        final ListAdapter m_Adapter = new ArrayAdapter<String>(this,android.R.layout.simple_expandable_list_item_1, namesAL);
+
+        builderSingle.setAdapter(
+                m_Adapter,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+        builderSingle.show();
+
     }
 
 
